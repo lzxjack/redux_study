@@ -1,4 +1,27 @@
 // Inlined / shortened version of `kindOf` from https://github.com/jonschlinkert/kind-of
+
+// 判断数据类型
+// undefined
+// null
+// boolean
+// string
+// number
+// symbol
+// function
+// array
+
+// 自己实现函数判断
+// date
+// error
+
+// 通过val.constructor.name判断：
+// Symbol
+// Promise
+// WeakMap
+// WeakSet
+// Map
+// Set
+
 export function miniKindOf(val: any): string {
   if (val === void 0) return 'undefined';
   if (val === null) return 'null';
@@ -58,6 +81,7 @@ function isDate(val: any) {
 export function kindOf(val: any) {
   let typeOfVal: string = typeof val;
 
+  // 生产环境，作进一步判断
   if (process.env.NODE_ENV !== 'production') {
     typeOfVal = miniKindOf(val);
   }

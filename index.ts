@@ -1,11 +1,11 @@
 // functions
-import createStore from './createStore'
-import combineReducers from './combineReducers'
-import bindActionCreators from './bindActionCreators'
-import applyMiddleware from './applyMiddleware'
-import compose from './compose'
-import warning from './utils/warning'
-import __DO_NOT_USE__ActionTypes from './utils/actionTypes'
+import createStore from './createStore';
+import combineReducers from './combineReducers';
+import bindActionCreators from './bindActionCreators';
+import applyMiddleware from './applyMiddleware';
+import compose from './compose';
+import warning from './utils/warning';
+import __DO_NOT_USE__ActionTypes from './utils/actionTypes';
 
 // types
 // store
@@ -20,8 +20,8 @@ export {
   StoreCreator,
   StoreEnhancer,
   StoreEnhancerStoreCreator,
-  ExtendState
-} from './types/store'
+  ExtendState,
+} from './types/store';
 // reducers
 export {
   Reducer,
@@ -29,21 +29,24 @@ export {
   ReducersMapObject,
   StateFromReducersMapObject,
   ActionFromReducer,
-  ActionFromReducersMapObject
-} from './types/reducers'
+  ActionFromReducersMapObject,
+} from './types/reducers';
 // action creators
-export { ActionCreator, ActionCreatorsMapObject } from './types/actions'
+export { ActionCreator, ActionCreatorsMapObject } from './types/actions';
 // middleware
-export { MiddlewareAPI, Middleware } from './types/middleware'
+export { MiddlewareAPI, Middleware } from './types/middleware';
 // actions
-export { Action, AnyAction } from './types/actions'
+export { Action, AnyAction } from './types/actions';
 
 /*
  * This is a dummy function to check if the function name has been altered by minification.
  * If the function has been minified and NODE_ENV !== 'production', warn the user.
  */
+// 空函数，用来检测用户是否压缩了代码
+// 若压缩了代码，则函数名称会改变
 function isCrushed() {}
 
+// 若运行在开发环境，并且函数名改变，即压缩了代码，则警告
 if (
   process.env.NODE_ENV !== 'production' &&
   typeof isCrushed.name === 'string' &&
@@ -55,7 +58,7 @@ if (
       'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' +
       'or setting mode to production in webpack (https://webpack.js.org/configuration/mode/) ' +
       'to ensure you have the correct code for your production build.'
-  )
+  );
 }
 
 export {
@@ -64,5 +67,5 @@ export {
   bindActionCreators,
   applyMiddleware,
   compose,
-  __DO_NOT_USE__ActionTypes
-}
+  __DO_NOT_USE__ActionTypes,
+};
