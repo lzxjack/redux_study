@@ -81,7 +81,7 @@ function isDate(val: any) {
 export function kindOf(val: any) {
   let typeOfVal: string = typeof val;
 
-  // 生产环境，作进一步判断
+  // 开发环境，作进一步判断
   if (process.env.NODE_ENV !== 'production') {
     typeOfVal = miniKindOf(val);
   }
