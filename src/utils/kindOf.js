@@ -1,31 +1,12 @@
 // Inlined / shortened version of `kindOf` from https://github.com/jonschlinkert/kind-of
 
-// 判断数据类型
-// undefined
-// null
-// boolean
-// string
-// number
-// symbol
-// function
-// array
-
-// 自己实现函数判断
-// date
-// error
-
-// 通过val.constructor.name判断：
-// Symbol
-// Promise
-// WeakMap
-// WeakSet
-// Map
-// Set
-
-export function miniKindOf(val: any): string {
+// 判断数据类型的函数
+// 输出字符串
+function miniKindOf(val) {
   if (val === void 0) return 'undefined';
   if (val === null) return 'null';
 
+  // 以下数据类型不用处理
   const type = typeof val;
   switch (type) {
     case 'boolean':
@@ -35,12 +16,16 @@ export function miniKindOf(val: any): string {
     case 'function': {
       return type;
     }
+    default:
+      break;
   }
 
+  // 单独判断数组、日期、错误对象
   if (Array.isArray(val)) return 'array';
   if (isDate(val)) return 'date';
   if (isError(val)) return 'error';
 
+  // 通过val.constructor.name判断以下类型
   const constructorName = ctorName(val);
   switch (constructorName) {
     case 'Symbol':
@@ -50,17 +35,19 @@ export function miniKindOf(val: any): string {
     case 'Map':
     case 'Set':
       return constructorName;
+    default:
+      break;
   }
 
   // other
-  return Object.prototype.toString.call(val).slice(8, -1).toLowerCase().replace(/\s/g, '');
+  return type.slice(8, -1).toLowerCase().replace(/\s/g, '');
 }
 
-function ctorName(val: any): string | null {
+function ctorName(val) {
   return typeof val.constructor === 'function' ? val.constructor.name : null;
 }
 
-function isError(val: any) {
+function isError(val) {
   return (
     val instanceof Error ||
     (typeof val.message === 'string' &&
@@ -69,7 +56,7 @@ function isError(val: any) {
   );
 }
 
-function isDate(val: any) {
+function isDate(val) {
   if (val instanceof Date) return true;
   return (
     typeof val.toDateString === 'function' &&
@@ -78,10 +65,10 @@ function isDate(val: any) {
   );
 }
 
-export function kindOf(val: any) {
-  let typeOfVal: string = typeof val;
+export function kindOf(val) {
+  let typeOfVal = typeof val;
 
-  // 开发环境，作进一步判断
+  // 开发环境下，进一步处理
   if (process.env.NODE_ENV !== 'production') {
     typeOfVal = miniKindOf(val);
   }

@@ -1,15 +1,5 @@
 import $$observable from './utils/symbol-observable'
 
-import {
-  Store,
-  PreloadedState,
-  StoreEnhancer,
-  Dispatch,
-  Observer,
-  ExtendState
-} from './types/store'
-import { Action } from './types/actions'
-import { Reducer } from './types/reducers'
 import ActionTypes from './utils/actionTypes'
 import isPlainObject from './utils/isPlainObject'
 import { kindOf } from './utils/kindOf'
@@ -22,55 +12,24 @@ import { kindOf } from './utils/kindOf'
  * parts of the state tree respond to actions, you may combine several reducers
  * into a single reducer function by using `combineReducers`.
  *
- * @param reducer A function that returns the next state tree, given
+ * @param {Function} reducer A function that returns the next state tree, given
  * the current state tree and the action to handle.
  *
- * @param preloadedState The initial state. You may optionally specify it
+ * @param {any} [preloadedState] The initial state. You may optionally specify it
  * to hydrate the state from the server in universal apps, or to restore a
  * previously serialized user session.
  * If you use `combineReducers` to produce the root reducer function, this must be
  * an object with the same shape as `combineReducers` keys.
  *
- * @param enhancer The store enhancer. You may optionally specify it
+ * @param {Function} [enhancer] The store enhancer. You may optionally specify it
  * to enhance the store with third-party capabilities such as middleware,
  * time travel, persistence, etc. The only store enhancer that ships with Redux
  * is `applyMiddleware()`.
  *
- * @returns A Redux store that lets you read the state, dispatch actions
+ * @returns {Store} A Redux store that lets you read the state, dispatch actions
  * and subscribe to changes.
  */
-export default function createStore<
-  S,
-  A extends Action,
-  Ext = {},
-  StateExt = never
->(
-  reducer: Reducer<S, A>,
-  enhancer?: StoreEnhancer<Ext, StateExt>
-): Store<ExtendState<S, StateExt>, A, StateExt, Ext> & Ext
-export default function createStore<
-  S,
-  A extends Action,
-  Ext = {},
-  StateExt = never
->(
-  reducer: Reducer<S, A>,
-  preloadedState?: PreloadedState<S>,
-  enhancer?: StoreEnhancer<Ext, StateExt>
-): Store<ExtendState<S, StateExt>, A, StateExt, Ext> & Ext
-export default function createStore<
-  S,
-  A extends Action,
-  Ext = {},
-  StateExt = never
->(
-  reducer: Reducer<S, A>,
-  preloadedState?: PreloadedState<S> | StoreEnhancer<Ext, StateExt>,
-  enhancer?: StoreEnhancer<Ext, StateExt>
-): Store<ExtendState<S, StateExt>, A, StateExt, Ext> & Ext {
-
-  // 只能传入一个enhancer，即一个函数
-  // arguments[3]代表传入的第四个参数
+export default function createStore(reducer, preloadedState, enhancer) {
   if (
     (typeof preloadedState === 'function' && typeof enhancer === 'function') ||
     (typeof enhancer === 'function' && typeof arguments[3] === 'function')
@@ -82,14 +41,11 @@ export default function createStore<
     )
   }
 
-  // 若第二个参数是function，第三个参数未传，则自动做一次转换
-  // 把第二个参数当作enhancer，preloadedState不传
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
-    enhancer = preloadedState as StoreEnhancer<Ext, StateExt>
+    enhancer = preloadedState
     preloadedState = undefined
   }
 
-  // 如果传入了enhancer
   if (typeof enhancer !== 'undefined') {
     if (typeof enhancer !== 'function') {
       throw new Error(
@@ -99,13 +55,9 @@ export default function createStore<
       )
     }
 
-    return enhancer(createStore)(
-      reducer,
-      preloadedState as PreloadedState<S>
-    ) as Store<ExtendState<S, StateExt>, A, StateExt, Ext> & Ext
+    return enhancer(createStore)(reducer, preloadedState)
   }
 
-  // reducer必须是个函数
   if (typeof reducer !== 'function') {
     throw new Error(
       `Expected the root reducer to be a function. Instead, received: '${kindOf(
@@ -114,15 +66,10 @@ export default function createStore<
     )
   }
 
-  // createStore的第一个参数
   let currentReducer = reducer
-  // createStore的第二个参数
-  let currentState = preloadedState as S
-  // 当前订阅者列表
-  let currentListeners: (() => void)[] | null = []
-  // 新的订阅者列表
+  let currentState = preloadedState
+  let currentListeners = []
   let nextListeners = currentListeners
-  // 锁，保证数据的一致性，同一时间，只能做一次数据的修改
   let isDispatching = false
 
   /**
@@ -132,9 +79,6 @@ export default function createStore<
    * This prevents any bugs around consumers calling
    * subscribe/unsubscribe in the middle of a dispatch.
    */
-  // 判断nextListeners和currentListeners是否为同一个引用
-  // 因为当初定义的时候，同时引用了一个数组
-  // 若是同一个引用将currentListeners作了一次拷贝，给nextListeners
   function ensureCanMutateNextListeners() {
     if (nextListeners === currentListeners) {
       nextListeners = currentListeners.slice()
@@ -144,16 +88,9 @@ export default function createStore<
   /**
    * Reads the state tree managed by the store.
    *
-   * @returns The current state tree of your application.
+   * @returns {any} The current state tree of your application.
    */
-
-  // 读取state
-  // 若被加锁，则报错
-  // 当reducer在操作的时候，不可以读取当前的state
-  // 直接返回当前的state，并没有作一层拷贝
-  // 所以我们可以直接修改state
-  // 但直接修改state的话，就没办法通知订阅者更新数据了
-  function getState(): S {
+  function getState() {
     if (isDispatching) {
       throw new Error(
         'You may not call store.getState() while the reducer is executing. ' +
@@ -162,7 +99,7 @@ export default function createStore<
       )
     }
 
-    return currentState as S
+    return currentState
   }
 
   /**
@@ -185,13 +122,10 @@ export default function createStore<
    * registered before the `dispatch()` started will be called with the latest
    * state by the time it exits.
    *
-   * @param listener A callback to be invoked on every dispatch.
-   * @returns A function to remove this change listener.
+   * @param {Function} listener A callback to be invoked on every dispatch.
+   * @returns {Function} A function to remove this change listener.
    */
-
-  // 判断监听者是否为函数
-  // 判断是否有reducer正在数据修改，保证数据一致性
-  function subscribe(listener: () => void) {
+  function subscribe(listener) {
     if (typeof listener !== 'function') {
       throw new Error(
         `Expected the listener to be a function. Instead, received: '${kindOf(
@@ -209,21 +143,16 @@ export default function createStore<
       )
     }
 
-    // 表示该订阅者在订阅状态中
     let isSubscribed = true
 
     ensureCanMutateNextListeners()
-    // 将新的订阅者加入nextListeners
     nextListeners.push(listener)
 
-    // 返回取消订阅的函数unsubscribe
     return function unsubscribe() {
-      // 若已经取消，不用执行了
       if (!isSubscribed) {
         return
       }
 
-      // 保证数据一致性
       if (isDispatching) {
         throw new Error(
           'You may not unsubscribe from a store listener while the reducer is executing. ' +
@@ -231,15 +160,11 @@ export default function createStore<
         )
       }
 
-      // 取消订阅
       isSubscribed = false
 
       ensureCanMutateNextListeners()
-      // 找到该订阅者的索引
       const index = nextListeners.indexOf(listener)
-      // 删除该订阅者
       nextListeners.splice(index, 1)
-      // 清空currentListeners
       currentListeners = null
     }
   }
@@ -258,27 +183,18 @@ export default function createStore<
    * example, see the documentation for the `redux-thunk` package. Even the
    * middleware will eventually dispatch plain object actions using this method.
    *
-   * @param action A plain object representing “what changed”. It is
+   * @param {Object} action A plain object representing “what changed”. It is
    * a good idea to keep actions serializable so you can record and replay user
    * sessions, or use the time travelling `redux-devtools`. An action must have
    * a `type` property which may not be `undefined`. It is a good idea to use
    * string constants for action types.
    *
-   * @returns For convenience, the same action object you dispatched.
+   * @returns {Object} For convenience, the same action object you dispatched.
    *
    * Note that, if you use a custom middleware, it may wrap `dispatch()` to
    * return something else (for example, a Promise you can await).
    */
-
-  // Dispatches一个action，这是唯一触发state改变的方式
-  // 如果要dispatch一个Promise，需要用redux-thunk，最终还是会转换成简单对象
-  // action，必须有type属性，最好使用常量
-
-  // 先做了3次判断：
-  // 1. 判断action是否是简单函数
-  // 2. action是否有type属性
-  // 3. 判断当前是否执行有其他的reducer操作
-  function dispatch(action: A) {
+  function dispatch(action) {
     if (!isPlainObject(action)) {
       throw new Error(
         `Actions must be plain objects. Instead, the actual type was: '${kindOf(
@@ -297,9 +213,6 @@ export default function createStore<
       throw new Error('Reducers may not dispatch actions.')
     }
 
-    // 执行进行加锁，isDispatching设置为true，防止其他的action触发reducer操作
-    // 用reducer函数对currentState进行加工之后，替换掉原来的currentState
-    // 执行完毕后解锁
     try {
       isDispatching = true
       currentState = currentReducer(currentState, action)
@@ -307,14 +220,12 @@ export default function createStore<
       isDispatching = false
     }
 
-    // 通知所有的订阅者，更新数据
     const listeners = (currentListeners = nextListeners)
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i]
       listener()
     }
 
-    // 返回传入的action
     return action
   }
 
@@ -325,14 +236,10 @@ export default function createStore<
    * load some of the reducers dynamically. You might also need this if you
    * implement a hot reloading mechanism for Redux.
    *
-   * @param nextReducer The reducer for the store to use instead.
-   * @returns The same store instance with a new reducer in place.
+   * @param {Function} nextReducer The reducer for the store to use instead.
+   * @returns {void}
    */
-  // 用来替换reducer
-  // 首先判断nextReducer是不是函数
-  function replaceReducer<NewState, NewActions extends A>(
-    nextReducer: Reducer<NewState, NewActions>
-  ): Store<ExtendState<NewState, StateExt>, NewActions, StateExt, Ext> & Ext {
+  function replaceReducer(nextReducer) {
     if (typeof nextReducer !== 'function') {
       throw new Error(
         `Expected the nextReducer to be a function. Instead, received: '${kindOf(
@@ -341,28 +248,18 @@ export default function createStore<
       )
     }
 
-    // 替换reducer
-    // TODO: do this more elegantly
-    ;(currentReducer as unknown as Reducer<NewState, NewActions>) = nextReducer
+    currentReducer = nextReducer
 
-    // This action has a similar effect to ActionTypes.INIT.
+    // This action has a similiar effect to ActionTypes.INIT.
     // Any reducers that existed in both the new and old rootReducer
     // will receive the previous state. This effectively populates
     // the new state tree with any relevant data from the old one.
-    dispatch({ type: ActionTypes.REPLACE } as A)
-    // change the type of the store by casting it to the new store
-    return store as unknown as Store<
-      ExtendState<NewState, StateExt>,
-      NewActions,
-      StateExt,
-      Ext
-    > &
-      Ext
+    dispatch({ type: ActionTypes.REPLACE })
   }
 
   /**
    * Interoperability point for observable/reactive libraries.
-   * @returns A minimal observable of state changes.
+   * @returns {observable} A minimal observable of state changes.
    * For more information, see the observable proposal:
    * https://github.com/tc39/proposal-observable
    */
@@ -371,13 +268,13 @@ export default function createStore<
     return {
       /**
        * The minimal observable subscription method.
-       * @param observer Any object that can be used as an observer.
+       * @param {Object} observer Any object that can be used as an observer.
        * The observer object should have a `next` method.
-       * @returns An object with an `unsubscribe` method that can
+       * @returns {subscription} An object with an `unsubscribe` method that can
        * be used to unsubscribe the observable from the store, and prevent further
        * emission of values from the observable.
        */
-      subscribe(observer: unknown) {
+      subscribe(observer) {
         if (typeof observer !== 'object' || observer === null) {
           throw new TypeError(
             `Expected the observer to be an object. Instead, received: '${kindOf(
@@ -387,9 +284,8 @@ export default function createStore<
         }
 
         function observeState() {
-          const observerAsObserver = observer as Observer<S>
-          if (observerAsObserver.next) {
-            observerAsObserver.next(getState())
+          if (observer.next) {
+            observer.next(getState())
           }
         }
 
@@ -400,22 +296,20 @@ export default function createStore<
 
       [$$observable]() {
         return this
-      }
+      },
     }
   }
 
   // When a store is created, an "INIT" action is dispatched so that every
   // reducer returns their initial state. This effectively populates
   // the initial state tree.
-  // 初始化，给state一个默认值
-  dispatch({ type: ActionTypes.INIT } as A)
+  dispatch({ type: ActionTypes.INIT })
 
-  const store = {
-    dispatch: dispatch as Dispatch<A>,
+  return {
+    dispatch,
     subscribe,
     getState,
     replaceReducer,
-    [$$observable]: observable
-  } as unknown as Store<ExtendState<S, StateExt>, A, StateExt, Ext> & Ext
-  return store
+    [$$observable]: observable,
+  }
 }

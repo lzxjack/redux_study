@@ -1,13 +1,14 @@
 /**
  * Prints a warning in the console if it exists.
  *
- * @param message The warning message.
+ * @param {String} message The warning message.
+ * @returns {void}
  */
 
-// 打印错误信息
-
-export default function warning(message: string): void {
+export default function warning(message) {
   /* eslint-disable no-console */
+
+  // 检测console是否存在
   if (typeof console !== 'undefined' && typeof console.error === 'function') {
     console.error(message);
   }
@@ -17,8 +18,7 @@ export default function warning(message: string): void {
     // "break on all exceptions" in your console,
     // it would pause the execution at this line.
 
-    // 这个错误是为了方便而抛出的，所以如果你在你的控制台中启用了"break on all exceptions"，
-    // 它会在这一行暂停执行。
+    // 如果console开启了"break on all exceptions"，在warning的地方停下
     throw new Error(message);
   } catch (e) {} // eslint-disable-line no-empty
 }
