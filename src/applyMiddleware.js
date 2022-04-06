@@ -1,4 +1,4 @@
-import compose from './compose'
+import compose from './compose';
 
 /**
  * Creates a store enhancer that applies middleware to the dispatch method
@@ -17,25 +17,30 @@ import compose from './compose'
  * @returns {Function} A store enhancer applying the middleware.
  */
 export default function applyMiddleware(...middlewares) {
-  return (createStore) => (...args) => {
-    const store = createStore(...args)
-    let dispatch = () => {
-      throw new Error(
-        'Dispatching while constructing your middleware is not allowed. ' +
-          'Other middleware would not be applied to this dispatch.'
-      )
-    }
+  return createStore =>
+    (...args) => {
+      // 创建一个store
+      const store = createStore(...args);
+      // 定义一个dispatch，如果在中间件构造过程中调用，则抛出错误
+      let dispatch = () => {
+        throw new Error(
+          'Dispatching while constructing your middleware is not allowed. ' +
+            'Other middleware would not be applied to this dispatch.'
+        );
+      };
 
-    const middlewareAPI = {
-      getState: store.getState,
-      dispatch: (...args) => dispatch(...args),
-    }
-    const chain = middlewares.map((middleware) => middleware(middlewareAPI))
-    dispatch = compose(...chain)(store.dispatch)
+      const middlewareAPI = {
+        getState: store.getState,
+        dispatch: (...args) => dispatch(...args)
+      };
+      // 依次调用middleware，存放在chain
+      const chain = middlewares.map(middleware => middleware(middlewareAPI));
+      // 用compose整合chain数组，并赋值给dispatch
+      dispatch = compose(...chain)(store.dispatch);
 
-    return {
-      ...store,
-      dispatch,
-    }
-  }
+      return {
+        ...store,
+        dispatch
+      };
+    };
 }
