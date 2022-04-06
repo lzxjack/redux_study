@@ -31,7 +31,7 @@ function getUnexpectedStateShapeWarningMessage(
     );
   }
 
-  // 找出inputState里有的key，但reducers集合里没有的key
+  // 找出state里没有对应reducer的key
   const unexpectedKeys = Object.keys(inputState).filter(
     key => !reducers.hasOwnProperty(key) && !unexpectedKeyCache[key]
   );
@@ -43,6 +43,7 @@ function getUnexpectedStateShapeWarningMessage(
   // 如果是替换reducer的action，则提前退出，不打印异常
   if (action && action.type === ActionTypes.REPLACE) return;
 
+  // 打印所有异常的key
   if (unexpectedKeys.length > 0) {
     return (
       `Unexpected ${unexpectedKeys.length > 1 ? 'keys' : 'key'} ` +
@@ -117,8 +118,7 @@ export default function combineReducers(reducers) {
   // 获取finalReducers的所有key
   const finalReducerKeys = Object.keys(finalReducers);
 
-  // This is used to make sure we don't warn about the same
-  // keys multiple times.
+  // 确保不警告多次相同的key
   let unexpectedKeyCache;
   if (process.env.NODE_ENV !== 'production') {
     unexpectedKeyCache = {};
