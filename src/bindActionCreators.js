@@ -1,9 +1,12 @@
-import { kindOf } from './utils/kindOf'
+import { kindOf } from './utils/kindOf';
 
+// actionCreator是产生action的函数，执行之后，会得到一个action
+// 得到的action再传递给dispatch
+// bindActionCreator函数返回一个自动执行dispatch的方法
 function bindActionCreator(actionCreator, dispatch) {
   return function () {
-    return dispatch(actionCreator.apply(this, arguments))
-  }
+    return dispatch(actionCreator.apply(this, arguments));
+  };
 }
 
 /**
@@ -27,26 +30,33 @@ function bindActionCreator(actionCreator, dispatch) {
  * function as `actionCreators`, the return value will also be a single
  * function.
  */
+
+//  actionCreators：创造action的函数对象
 export default function bindActionCreators(actionCreators, dispatch) {
+  // 如果是一个函数，直接执行bindActionCreator并返回
   if (typeof actionCreators === 'function') {
-    return bindActionCreator(actionCreators, dispatch)
+    return bindActionCreator(actionCreators, dispatch);
   }
 
+  // 错误处理
   if (typeof actionCreators !== 'object' || actionCreators === null) {
     throw new Error(
       `bindActionCreators expected an object or a function, but instead received: '${kindOf(
         actionCreators
       )}'. ` +
         `Did you write "import ActionCreators from" instead of "import * as ActionCreators from"?`
-    )
+    );
   }
 
-  const boundActionCreators = {}
+  const boundActionCreators = {};
+  // 遍历每个函数
   for (const key in actionCreators) {
-    const actionCreator = actionCreators[key]
+    // 拿到每个函数
+    const actionCreator = actionCreators[key];
     if (typeof actionCreator === 'function') {
-      boundActionCreators[key] = bindActionCreator(actionCreator, dispatch)
+      // 将自动执行dispatch的方法放到boundActionCreators中
+      boundActionCreators[key] = bindActionCreator(actionCreator, dispatch);
     }
   }
-  return boundActionCreators
+  return boundActionCreators;
 }
